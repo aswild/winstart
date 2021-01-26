@@ -4,11 +4,8 @@ use std::fmt::Write;
 use std::ptr;
 
 use anyhow::{anyhow, Context, Result};
-
-mod bindings {
-    ::windows::include_bindings!();
-}
-use bindings::windows::win32::{shell::ShellExecuteA, system_services::SW_SHOWNORMAL};
+use winapi::um::shellapi::ShellExecuteA;
+use winapi::um::winuser::SW_SHOWNORMAL;
 
 fn clean_environment() {
     // In MSYS, HOME will be set to the Windows path of the MSYS home directory, which is usually
@@ -57,12 +54,12 @@ fn run() -> Result<()> {
         let args_p = args_c.as_ref().map(|cs| cs.as_ptr()).unwrap_or(ptr::null());
 
         let ret = ShellExecuteA(
-            Default::default(), // hwnd, default is NULL
-            ptr::null(),        // lpOperation
-            file_p,             // lpFile
-            args_p,             // lpParameters
-            ptr::null(),        // lpDirectory
-            SW_SHOWNORMAL,      // nShowCmd
+            ptr::null_mut(), // hwnd
+            ptr::null(),     // lpOperation
+            file_p,          // lpFile
+            args_p,          // lpParameters
+            ptr::null(),     // lpDirectory
+            SW_SHOWNORMAL,   // nShowCmd
         );
 
         // no-op, but won't compile if file_c or args_c got moved/dropped
