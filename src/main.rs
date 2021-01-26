@@ -8,6 +8,18 @@ use winapi::shared::winerror;
 use winapi::um::shellapi::{self, ShellExecuteA};
 use winapi::um::winuser::SW_SHOWNORMAL;
 
+fn help_and_exit() -> ! {
+    let msg = "\
+        usage: winstart.exe FILE [ARGUMENTS...]\n\
+        \n\
+        FILE may be a filename, URL, or executable file.\n\
+        If FILE is an executable, ARGUMENTS are joined with spaces when passed\n\
+        to the the programs Windows-style command-line. Any arguments with spaces\n\
+        will be surrounded by double quotes.";
+    println!("{}", msg);
+    std::process::exit(1);
+}
+
 /// Error messages according to
 /// https://docs.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shellexecutea
 fn check_shellexecute_status(status: u32) -> Result<()> {
@@ -32,7 +44,7 @@ fn check_shellexecute_status(status: u32) -> Result<()> {
             shellapi::SE_ERR_SHARE => "A sharing violation occurred. ",
             _ => "An unknown error occurred.",
         };
-        Err(anyhow!("ShellExecute failed: {}", msg))
+        Err(anyhow!("ShellExecute: {}", msg))
     }
 }
 
@@ -51,6 +63,11 @@ fn clean_environment() {
 fn run() -> Result<()> {
     let my_args: Vec<_> = env::args().collect();
     let file = my_args.get(1).ok_or_else(|| anyhow!("no file specified"))?;
+
+    match file.as_str() {
+        "-h" | "--help" | "/?" => help_and_exit(),
+        _ => (),
+    };
 
     let args = if my_args.len() > 2 {
         let mut s = String::new();
