@@ -4,8 +4,37 @@ use std::fmt::Write;
 use std::ptr;
 
 use anyhow::{anyhow, Context, Result};
-use winapi::um::shellapi::ShellExecuteA;
+use winapi::shared::winerror;
+use winapi::um::shellapi::{self, ShellExecuteA};
 use winapi::um::winuser::SW_SHOWNORMAL;
+
+/// Error messages according to
+/// https://docs.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shellexecutea
+fn check_shellexecute_status(status: u32) -> Result<()> {
+    if status > 32 {
+        Ok(())
+    } else {
+        let msg = match status {
+            0 => " The operating system is out of memory or resources.",
+            winerror::ERROR_FILE_NOT_FOUND => "The specified file was not found",
+            winerror::ERROR_PATH_NOT_FOUND => "The specified path was not found.",
+            winerror::ERROR_BAD_FORMAT => "The .exe file is invalid (non-Win32 .exe or error in .exe image).",
+            shellapi::SE_ERR_ACCESSDENIED => "The operating system denied access to the specified file.",
+            shellapi::SE_ERR_ASSOCINCOMPLETE => "The file name association is incomplete or invalid.",
+            shellapi::SE_ERR_DDEBUSY => "The DDE transaction could not be completed because other DDE transactions were being processed.",
+            shellapi::SE_ERR_DDEFAIL => "The DDE transaction failed.",
+            shellapi::SE_ERR_DDETIMEOUT => "The DDE transaction could not be completed because the request timed out.",
+            shellapi::SE_ERR_DLLNOTFOUND => "The specified DLL was not found.",
+            //shellapi::SE_ERR_FNF => "The specified file was not found.",
+            shellapi::SE_ERR_NOASSOC => "There is no application associated with the given file name extension.",
+            shellapi::SE_ERR_OOM => "There was not enough memory to complete the operation.",
+            //shellapi::SE_ERR_PNF => "The specified path was not found.",
+            shellapi::SE_ERR_SHARE => "A sharing violation occurred. ",
+            _ => "An unknown error occurred.",
+        };
+        Err(anyhow!("ShellExecute failed: {}", msg))
+    }
+}
 
 fn clean_environment() {
     // In MSYS, HOME will be set to the Windows path of the MSYS home directory, which is usually
@@ -66,10 +95,11 @@ fn run() -> Result<()> {
         #[cfg(debug_assertions)]
         let (_, _) = (file_c, args_c);
 
-        ret
+        // ShellExecuteA return an integer typed as HINSTANCE (for compatibility, of course)
+        ret as u32
     };
 
-    eprintln!("ShellExecute returned {:?}", ret);
+    check_shellexecute_status(ret)?;
 
     Ok(())
 }
