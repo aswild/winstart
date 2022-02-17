@@ -2,7 +2,7 @@
 name = "winstart"
 version = "0.1.0"
 authors = ["Allen Wild <allenwild93@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 anyhow = "1"

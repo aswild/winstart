@@ -54,9 +54,10 @@ fn clean_environment() {
     // When launched from WSL2 /init, we get a default Windows environment.
     if env::var_os("MSYSTEM").is_some() {
         // there's plenty of other cruft, but these are the most likely to break/confuse programs
-        ["HOME", "SHELL", "MSYSTEM"]
-            .iter()
-            .for_each(env::remove_var);
+        let vars = ["HOME", "SHELL", "MSYSTEM"];
+        for var in vars {
+            env::remove_var(var);
+        }
     }
 }
 
