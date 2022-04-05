@@ -88,10 +88,10 @@ fn run() -> Result<()> {
     };
 
     let file_c = CString::new(file.as_bytes()).context("invalid filename (contains NULL)")?;
-    let args_c = match args {
-        Some(s) => Some(CString::new(s).context("invalid arguments (contains NULL)")?),
-        None => None,
-    };
+    let args_c = args
+        .map(CString::new)
+        .transpose()
+        .context("invalid arguments (contains NULL)")?;
 
     clean_environment();
 
